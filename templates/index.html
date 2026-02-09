@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJ Voice Cloning</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>EJ Voice Cloning</h1>
+        <p class="subtitle">Type text below and hear it in EJ's voice (XTTS-v2)</p>
+
+        <textarea id="text-input" placeholder="Enter text to synthesize..." rows="4"></textarea>
+
+        <button id="generate-btn" onclick="synthesize()">Generate</button>
+
+        <div id="spinner" class="spinner" style="display:none;">
+            <div class="loader"></div>
+            <span>Generating audio (this may take 5-15 seconds on CPU)...</span>
+        </div>
+
+        <div id="error" class="error" style="display:none;"></div>
+
+        <audio id="audio-player" controls style="display:none;"></audio>
+    </div>
+
+    <script>
+        async function synthesize() {
+            const text = document.getElementById('text-input').value.trim();
+            if (!text) return;
+
+            const btn = document.getElementById('generate-btn');
+            const spinner = document.getElementById('spinner');
+            const player = document.getElementById('audio-player');
+            const error = document.getElementById('error');
+
+            btn.disabled = true;
+            spinner.style.display = 'flex';
+            player.style.display = 'none';
+            error.style.display = 'none';
+
+            try {
+                const resp = await fetch('/synthesize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: text})
+                });
+
+                if (!resp.ok) {
+                    const data = await resp.json();
+                    throw new Error(data.error || 'Synthesis failed');
+                }
+
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                player.src = url;
+                player.style.display = 'block';
+                player.play();
+            } catch (e) {
+                error.textContent = e.message;
+                error.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        document.getElementById('text-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                synthesize();
+            }
+        });
+    </script>
+</body>
+</html>

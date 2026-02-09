@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ej-voice-cloning
+    runtime: docker
+    plan: standard
+    healthCheckPath: /health
+    envVars:
+      - key: XTTS_MODEL_PATH
+        value: /app/xtts_model
